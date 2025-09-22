@@ -25,7 +25,7 @@ def fetch_bitcoin_history_from_coingecko():
 
     # Janela "ontem": [data_interval_start - 1 dia, data_interval_start)
     end_time = ctx["data_interval_start"]
-    start_time = end_time - timedelta(days=365)
+    start_time = end_time - timedelta(days=180)
 
     print(f"[UTC] janela-alvo: {start_time} -> {end_time}")
 
