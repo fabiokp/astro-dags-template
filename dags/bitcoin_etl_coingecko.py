@@ -74,9 +74,10 @@ def fetch_bitcoin_history_from_coingecko():
 
     # TODO: salvar no warehouse, ex. via PostgresHook / to_sql
     from airflow.providers.postgres.hooks.postgres import PostgresHook
-    hook = PostgresHook(postgres_conn_id="postgres")
-    engine = hook.get_sqlalchemy_engine()
-    df.to_sql("bitcoin_history_fabio", con=engine, if_exists="replace", index=True)
+    hook = PostgresHook(postgres_conn_id="postgres")    
+    hook.run("DROP TABLE IF EXISTS bitcoin_history_f
+    #engine = hook.get_sqlalchemy_engine()
+    #df.to_sql("bitcoin_history_fabio", con=engine, if_exists="replace", index=True)
 
 
 @dag(
