@@ -42,7 +42,7 @@ def fetch_bitcoin_history_from_coingecko():
 
     # Observação: CoinGecko pode aplicar rate limit (HTTP 429).
     # O retry geral é tratado pelo Airflow (default_args['retries']).
-    r = requests.get(url, params=params, timeout=30)
+    r = requests.get(url, params=params, timeout=360)
     r.raise_for_status()
     payload = r.json()
 
