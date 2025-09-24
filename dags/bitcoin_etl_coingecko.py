@@ -25,7 +25,7 @@ def fetch_bitcoin_history_from_coingecko():
 
     # Janela "ontem": [data_interval_start - 1 dia, data_interval_start)
     end_time = ctx["data_interval_start"]
-    start_time = end_time - timedelta(days=360)
+    start_time = end_time - timedelta(days=1)
 
     print(f"[UTC] janela-alvo: {start_time} -> {end_time}")
 
@@ -76,7 +76,7 @@ def fetch_bitcoin_history_from_coingecko():
     from airflow.providers.postgres.hooks.postgres import PostgresHook
     hook = PostgresHook(postgres_conn_id="postgres")
     engine = hook.get_sqlalchemy_engine()
-    df.to_sql("bitcoin_history_fabio", con=engine, if_exists="replace", index=True)
+    df.to_sql("bitcoin_history_fabiokp", con=engine, if_exists="replace", index=True)
 
 
 
