@@ -38,6 +38,7 @@ def fetch_bitcoin_history_from_coingecko():
         "vs_currency": "usd",
         "from": start_s,
         "to": end_s,
+        "interval": "daily"
     }
 
     # Observação: CoinGecko pode aplicar rate limit (HTTP 429).
