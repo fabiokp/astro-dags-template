@@ -12,8 +12,9 @@ import pandas as pd
 DEFAULT_ARGS = {
     "email_on_failure": True,
     "owner": "Alex Lopes,Open in Cloud IDE",
+    "retries": 5,             # Number of retry attempts
+    "retry_delay": timedelta(minutes=10),   # Time between retries
 }
-
 
 @task
 def fetch_bitcoin_history_from_coingecko():
@@ -25,9 +26,6 @@ def fetch_bitcoin_history_from_coingecko():
 
     # Janela "ontem": [data_interval_start - 1 dia, data_interval_start)
     end_time = ctx["data_interval_start"]
-    # Observação: optei por extrair uma série longa usando dados diários. 
-    # Como o parâmetro de intervalo (dia ou horas/minutos) da API é obrigatoriamente automático nesse tier,
-    # fiz uma consulta única com timedelta de 360 dias.
     start_time = end_time - timedelta(days=1)
 
     print(f"[UTC] janela-alvo: {start_time} -> {end_time}")
