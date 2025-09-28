@@ -116,4 +116,3 @@ def bitcoin_etl_coingecko():
 
 # Airflow descobre qualquer variável global que referencie um DAG
 dag = bitcoin_etl_coingecko()
-dag.concurrency = 1
