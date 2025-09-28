@@ -16,7 +16,7 @@ BQ_LOCATION = "US"
 GCP_CONN_ID = "google_cloud_default"
 # ====================
 
-
+# Teste ano
 def generate_query_url_year(year: int) -> str:
     """
     Build the openFDA API query URL filtering semaglutide events for the entire year.
