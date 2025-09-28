@@ -6,6 +6,7 @@ from datetime import timedelta
 import pendulum
 import requests
 import pandas as pd
+import time 
 
 DEFAULT_ARGS = {
     "email_on_failure": True,
