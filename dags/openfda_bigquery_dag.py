@@ -21,7 +21,7 @@ GCP_CONN_ID = "google_cloud_default"
 # Teste ano
 ctx = get_current_context()
 year = ctx["dag_run"].conf.get("year", 2025)  # default to 2025 if not provided
-year = ctx["dag_run"].conf.get("month", 01)  # default to 01 if not provided
+year = ctx["dag_run"].conf.get("month", 1)  # default to 01 if not provided
 
 
 def generate_query_url(year: int, month: int) -> str:
