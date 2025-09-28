@@ -1,79 +1,129 @@
 from __future__ import annotations
+
 from airflow.decorators import dag, task
-from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
-import pendulum
-import pandas as pd
+from airflow.operators.python import get_current_context
+from datetime import datetime, timedelta
+from calendar import monthrange
 import requests
-from datetime import date
+import pandas as pd
+from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 
-# Test run
-# Configurações
-GCP_PROJECT  = "mba-cdia-enap"
-BQ_DATASET   = "openfda"
-BQ_TABLE     = "openfda_sildenafil_range_test"
-BQ_LOCATION  = "US"
-GCP_CONN_ID  = "google_cloud_default"
-USE_POOL     = True
-POOL_NAME    = "openfda_api"
-TEST_START = date(2025, 6, 1)
-TEST_END   = date(2025, 7, 29)
-DRUG_QUERY = 'sildenafil+citrate'
+# ====== CONFIG ======
+GCP_PROJECT = "mba-cdia-enap"
+BQ_DATASET = "openfda"
+BQ_TABLE = "semaglutine_reactions"
+BQ_LOCATION = "US"
+GCP_CONN_ID = "google_cloud_default"
+# ====================
 
-SESSION = requests.Session()
-SESSION.headers.update({"User-Agent": "mda-openfda-etl/1.0 (contato: voce@exemplo.gov.br)"})
 
-def _openfda_get(url: str) -> dict:
-    r = SESSION.get(url, timeout=30)
-    if r.status_code == 404:
-        return {"results": []}
-    r.raise_for_status()
-    return r.json()
+def generate_query_url(year: int, month: int) -> str:
+    start_date = f"{year}{month:02d}01"
+    end_day = monthrange(year, month)[1]
+    end_date = f"{year}{month:02d}{end_day:02d}"
+    return (
+        "https://api.fda.gov/drug/event.json"
+        f"?search=patient.drug.openfda.generic_name:%22semaglutide%22"
+        f"+AND+receivedate:[{start_date}+TO+{end_date}]&limit=100"
+    )
 
-def _build_openfda_url(start: date, end: date, drug_query: str) -> str:
-    start_str = start.strftime("%Y%m%d")
-    end_str   = end.strftime("%Y%m%d")
-    return ("https://api.fda.gov/drug/event.json"
-            f"?search=patient.drug.medicinalproduct:%22{drug_query}%22"
-            f"+AND+receivedate:[{start_str}+TO+{end_str}]"
-            "&count=receivedate")
 
-_task_kwargs = dict(retries=0)
-if USE_POOL:
-    _task_kwargs["pool"] = POOL_NAME
+def format_fda_response(api_data):
+    extracted_data = []
+    for result in api_data.get("results", []):
+        report_id = result.get("safetyreportid")
+        country = result.get("occurcountry")
+        patient = result.get("patient", {})
+        age = patient.get("patientonsetage")
+        sex = patient.get("patientsex")
+        reactions = patient.get("reaction", [])
+        for reaction in reactions:
+            reaction_pt = reaction.get("reactionmeddrapt")
+            extracted_data.append([report_id, country, age, sex, reaction_pt])
 
-@task(**_task_kwargs)
-def fetch_fixed_range_and_to_bq():
-    url = _build_openfda_url(TEST_START, TEST_END, DRUG_QUERY)
-    data = _openfda_get(url)
-    results = data.get("results", [])
-    if not results:
+    df = pd.DataFrame(
+        extracted_data,
+        columns=[
+            "safetyreportid",
+            "occurcountry",
+            "patientonsetage",
+            "patientsex",
+            "reactionmeddrapt",
+        ],
+    )
+    return df
+
+
+@task
+def fetch_openfda_data():
+    ctx = get_current_context()
+    logical_date = ctx["data_interval_start"]
+    year, month = logical_date.year, logical_date.month
+
+    url = generate_query_url(year, month)
+    try:
+        resp = requests.get(url, timeout=60)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        print(f"OpenFDA request failed: {e}")
+        return pd.DataFrame().to_dict(orient="records")
+
+    data = resp.json()
+    df = format_fda_response(data)
+
+    return df.to_dict(orient="records")
+
+
+@task
+def save_to_bigquery(records: list[dict]) -> None:
+    if not records:
+        print("No data to write to BigQuery for this period.")
         return
-    df = pd.DataFrame(results).rename(columns={"count": "events"})
-    df["time"] = pd.to_datetime(df["time"], format="%Y%m%d", utc=True)
-    df["win_start"] = pd.to_datetime(TEST_START)
-    df["win_end"]   = pd.to_datetime(TEST_END)
-    df["drug"]      = DRUG_QUERY.replace("+", " ")
-    bq_hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, location=BQ_LOCATION, use_legacy_sql=False)
-    df.to_gbq(destination_table=f"{BQ_DATASET}.{BQ_TABLE}",
-              project_id=GCP_PROJECT,
-              if_exists="append",
-              credentials=bq_hook.get_credentials(),
-              table_schema=[
-                {"name": "time", "type": "TIMESTAMP"},
-                {"name": "events", "type": "INTEGER"},
-                {"name": "win_start", "type": "DATE"},
-                {"name": "win_end", "type": "DATE"},
-                {"name": "drug", "type": "STRING"}],
-              location=BQ_LOCATION,
-              progress_bar=False)
 
-@dag(dag_id="openfda_mcb2_test_range",
-     schedule="@once",
-     start_date=pendulum.datetime(2025, 9, 23, tz="UTC"),
-     catchup=False,
-     max_active_runs=1,
-     tags=["openfda", "bigquery", "test", "range"])
-def openfda_pipeline_test_range():
-    fetch_fixed_range_and_to_bq()
+    df = pd.DataFrame(records)
 
-dag = openfda_pipeline_test_range()
+    # Define table id in format project.dataset.table
+    table_id = f"{GCP_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
+
+    bq_hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, location=BQ_LOCATION)
+
+    # Convert DataFrame to list of dicts for insert_all method
+    rows_to_insert = df.to_dict(orient="records")
+
+    errors = bq_hook.insert_all(
+        project_id=GCP_PROJECT,
+        dataset_id=BQ_DATASET,
+        table_id=BQ_TABLE,
+        rows=rows_to_insert,
+        location=BQ_LOCATION,
+    )
+    if errors:
+        raise RuntimeError(f"Error inserting rows into BigQuery: {errors}")
+    else:
+        print(f"Successfully inserted {len(rows_to_insert)} records into BigQuery table {table_id}")
+
+
+default_args = {
+    "owner": "airflow",
+    "depends_on_past": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
+}
+
+
+@dag(
+    dag_id="fetch_openfda_semaglutide_monthly_bq",
+    description="Monthly fetch of OpenFDA semaglutide adverse events to BigQuery",
+    default_args=default_args,
+    schedule="@monthly",
+    start_date=datetime(2023, 11, 1),
+    catchup=True,
+    max_active_runs=1,
+    tags=["openfda", "semaglutide", "bigquery"],
+)
+def fetch_openfda_semaglutide_monthly_bq():
+    records = fetch_openfda_data()
+    save_to_bigquery(records)
+
+
+dag = fetch_openfda_semaglutide_monthly_bq()
