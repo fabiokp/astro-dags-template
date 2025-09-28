@@ -61,8 +61,15 @@ def format_fda_response(api_data):
 @task
 def fetch_openfda_data():
     ctx = get_current_context()
-    year = ctx["dag_run"].conf.get("year", 2025)
-    month = ctx["dag_run"].conf.get("month", 1)
+    # Try getting year/month from manual trigger conf (Airflow Web UI)
+    year = ctx["dag_run"].conf.get("year")
+    month = ctx["dag_run"].conf.get("month")
+
+    # If not provided in trigger conf, fallback to logical execution date
+    if not year or not month:
+        logical_date = ctx["data_interval_start"]
+        year = logical_date.year
+        month = logical_date.month
 
     url = generate_query_url(year, month)
     try:
