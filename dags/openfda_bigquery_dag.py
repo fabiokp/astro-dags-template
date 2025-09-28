@@ -17,16 +17,14 @@ GCP_CONN_ID = "google_cloud_default"
 # ====================
 #testrunnn
 
-def generate_query_url(year: int, month: int) -> str:
-    start_date = f"{year}{month:02d}01"
-    end_day = monthrange(year, month)[1]
-    end_date = f"{year}{month:02d}{end_day:02d}"
+def generate_query_url(year: int) -> str:
+    start_date = f"{year}0101"
+    end_date = f"{year}1231"
     return (
         "https://api.fda.gov/drug/event.json"
         f"?search=patient.drug.openfda.generic_name:%22semaglutide%22"
-        f"+AND+receivedate:[{start_date}+TO+{end_date}]"
+        f"+AND+receivedate:[{start_date}+TO+{end_date}]&limit=100"
     )
-
 
 def format_fda_response(api_data):
     extracted_data = []
@@ -63,15 +61,13 @@ def fetch_openfda_data():
     ctx = get_current_context()
     # Try getting year/month from manual trigger conf (Airflow Web UI)
     year = ctx["dag_run"].conf.get("year")
-    month = ctx["dag_run"].conf.get("month")
 
     # If not provided in trigger conf, fallback to logical execution date
     if not year or not month:
         logical_date = ctx["data_interval_start"]
         year = logical_date.year
-        month = logical_date.month
 
-    url = generate_query_url(year, month)
+    url = generate_query_url(year)
     try:
         resp = requests.get(url, timeout=60)
         resp.raise_for_status()
