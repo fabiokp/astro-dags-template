@@ -124,7 +124,7 @@ DEFAULT_ARGS = {
     dag_id="fetch_openfda_data_monthly",
     description="Monthly fetch of OpenFDA semaglutide adverse events to BigQuery",
     default_args=DEFAULT_ARGS,
-    schedule="@monthly",
+    schedule="@yearly",
     start_date=pendulum.datetime(2023, 11, 1, tz="UTC"),
     catchup=True,
     max_active_runs=1,
