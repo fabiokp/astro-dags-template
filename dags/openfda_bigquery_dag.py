@@ -15,7 +15,7 @@ BQ_DATASET = "openfda"
 BQ_TABLE = "semaglutide_reactions"
 GCP_CONN_ID = "google_cloud_default"
 # ====================
-#testrun
+#testrunnn
 
 def generate_query_url(year: int, month: int) -> str:
     start_date = f"{year}{month:02d}01"
