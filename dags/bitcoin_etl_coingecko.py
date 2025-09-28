@@ -100,7 +100,7 @@ def fetch_bitcoin_history_from_coingecko():
 @dag(
     default_args=DEFAULT_ARGS,
     schedule="0 0 * * *",  # diário à 00:00 UTC
-    start_date=pendulum.datetime(2025, 9, 27, tz="UTC"),
+    start_date=pendulum.datetime(2025, 9, 20, tz="UTC"),
     catchup=True,
     max_active_runs=1,
     owner_links={
