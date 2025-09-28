@@ -41,7 +41,7 @@ def format_fda_response(api_data):
         reactions = patient.get("reaction", [])
         for reaction in reactions:
             reaction_pt = reaction.get("reactionmeddrapt")
-            extracted_data.append([report_id, country, age, sex, reaction_pt])
+            extracted_data.append([report_id, country, receivedate, age, sex, reaction_pt])
 
     df = pd.DataFrame(
         extracted_data,
