@@ -25,17 +25,14 @@ year = ctx["dag_run"].conf.get("month", 01)  # default to 01 if not provided
 
 
 def generate_query_url(year: int, month: int) -> str:
-    # Build [YYYYMMDD TO YYYYMMDD] for the whole month
     start_date = f"{year}{month:02d}01"
     end_day = monthrange(year, month)[1]
     end_date = f"{year}{month:02d}{end_day:02d}"
-    # OpenFDA query for sildenafil citrate, grouped by receivedate
     return (
         "https://api.fda.gov/drug/event.json"
-        f"?search=patient.drug.medicinalproduct:%22sildenafil+citrate%22"
-        f"+AND+receivedate:[{start_date}+TO+{end_date}]&count=receivedate"
+        f"?search=patient.drug.openfda.generic_name:%22semaglutide%22"
+        f"+AND+receivedate:[{start_date}+TO+{end_date}]&limit=100"
     )
-
 
 def format_fda_response(api_data):
     extracted_data = []
