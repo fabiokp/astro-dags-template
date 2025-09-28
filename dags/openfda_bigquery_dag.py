@@ -13,7 +13,6 @@ from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 GCP_PROJECT = "mba-cdia-enap"
 BQ_DATASET = "openfda"
 BQ_TABLE = "semaglutide_reactions"
-BQ_LOCATION = "US"
 GCP_CONN_ID = "google_cloud_default"
 # ====================
 
