@@ -21,17 +21,19 @@ GCP_CONN_ID = "google_cloud_default"
 # Teste ano
 ctx = get_current_context()
 year = ctx["dag_run"].conf.get("year", 2025)  # default to 2025 if not provided
+year = ctx["dag_run"].conf.get("month", 01)  # default to 01 if not provided
 
-def generate_query_url_year(year: int) -> str:
-    """
-    Build the openFDA API query URL filtering semaglutide events for the entire year.
-    """
-    start_date = f"{year}0101"
-    end_date = f"{year}1231"
+
+def generate_query_url(year: int, month: int) -> str:
+    # Build [YYYYMMDD TO YYYYMMDD] for the whole month
+    start_date = f"{year}{month:02d}01"
+    end_day = monthrange(year, month)[1]
+    end_date = f"{year}{month:02d}{end_day:02d}"
+    # OpenFDA query for sildenafil citrate, grouped by receivedate
     return (
         "https://api.fda.gov/drug/event.json"
-        f"?search=patient.drug.openfda.generic_name:%22semaglutide%22"
-        f"+AND+receivedate:[{start_date}+TO+{end_date}]&limit=100"
+        f"?search=patient.drug.medicinalproduct:%22sildenafil+citrate%22"
+        f"+AND+receivedate:[{start_date}+TO+{end_date}]&count=receivedate"
     )
 
 
@@ -119,7 +121,7 @@ default_args = {
 
 
 @dag(
-    dag_id="fetch_openfda_semaglutide_monthly_bq",
+    dag_id="fetch_openfda_data_monthly",
     description="Monthly fetch of OpenFDA semaglutide adverse events to BigQuery",
     default_args=default_args,
     schedule="@monthly",
