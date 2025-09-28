@@ -13,7 +13,7 @@ from airflow.operators.python import get_current_context
 # ====== CONFIG ======
 GCP_PROJECT = "mba-cdia-enap"
 BQ_DATASET = "openfda"
-BQ_TABLE = "semaglutine_reactions"
+BQ_TABLE = "semaglutide_reactions"
 GCP_CONN_ID = "google_cloud_default"
 # ====================
 
