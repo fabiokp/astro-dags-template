@@ -19,10 +19,6 @@ GCP_CONN_ID = "google_cloud_default"
 # ====================
 
 # Teste ano
-ctx = get_current_context()
-year = ctx["dag_run"].conf.get("year", 2025)  # default to 2025 if not provided
-year = ctx["dag_run"].conf.get("month", 1)  # default to 01 if not provided
-
 
 def generate_query_url(year: int, month: int) -> str:
     start_date = f"{year}{month:02d}01"
@@ -63,8 +59,12 @@ def format_fda_response(api_data):
 @task
 def fetch_openfda_data():
     ctx = get_current_context()
-    logical_date = ctx["data_interval_start"]
-    year, month = logical_date.year, logical_date.month
+    year = ctx["dag_run"].conf.get("year", 2025)  # default to 2025 if not provided
+    month = ctx["dag_run"].conf.get("month", 1)  # default to 01 if not provided
+
+    # ctx = get_current_context()
+    # logical_date = ctx["data_interval_start"]
+    # year, month = logical_date.year, logical_date.month
 
     url = generate_query_url(year, month)
     try:
