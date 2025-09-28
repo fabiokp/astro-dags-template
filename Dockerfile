@@ -1,4 +1,4 @@
-FROM astrocrpublic.azurecr.io/runtime:3.3-0-python-3.12
+FROM astrocrpublic.azurecr.io/runtime:3.1-1-python-3.12
 
 # 2. Switch to the 'root' user to get permissions for installation
 USER root
