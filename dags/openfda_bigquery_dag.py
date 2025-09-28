@@ -63,7 +63,7 @@ def fetch_openfda_data():
     year = ctx["dag_run"].conf.get("year")
 
     # If not provided in trigger conf, fallback to logical execution date
-    if not year or not month:
+    if not year:
         logical_date = ctx["data_interval_start"]
         year = logical_date.year
 
