@@ -90,7 +90,7 @@ def save_to_bigquery(records: list[dict]) -> None:
     # Define table id in format project.dataset.table
     table_id = f"{GCP_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
 
-    bq_hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, location=BQ_LOCATION)
+    bq_hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID)
 
     # Convert DataFrame to list of dicts for insert_all method
     rows_to_insert = df.to_dict(orient="records")
