@@ -117,6 +117,8 @@ DEFAULT_ARGS = {
 }
 
 @dag(
+    dag_id="fetch_openfda_data_monthly_batch_bq",
+    description="Monthly fetch of OpenFDA semaglutide adverse events to BigQuery via GCS batch load",
     default_args=DEFAULT_ARGS,
     schedule="@monthly",
     start_date=pendulum.datetime(2023, 11, 1, tz="UTC"),
@@ -124,6 +126,7 @@ DEFAULT_ARGS = {
     max_active_runs=1,
     tags=["openfda", "semaglutide", "bigquery"],
 )
+
 def fetch_openfda_semaglutide_monthly():
     df = fetch_openfda_data()
     save_to_bigquery(df)
