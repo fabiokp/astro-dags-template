@@ -23,8 +23,9 @@ def generate_query_url(year: int, month: int) -> str:
     return (
         "https://api.fda.gov/drug/event.json"
         f"?search=patient.drug.openfda.generic_name:%22semaglutide%22"
-        f"+AND+receivedate:[{start_date}+TO+{end_date}]
+        f"+AND+receivedate:[{start_date}+TO+{end_date}]"
     )
+
 
 def format_fda_response(api_data):
     extracted_data = []
