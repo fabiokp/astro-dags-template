@@ -14,7 +14,6 @@ from airflow.operators.python import get_current_context
 GCP_PROJECT = "mba-cdia-enap"
 BQ_DATASET = "openfda"
 BQ_TABLE = "semaglutine_reactions"
-BQ_LOCATION = "US"
 GCP_CONN_ID = "google_cloud_default"
 # ====================
 
@@ -100,8 +99,7 @@ def save_to_bigquery(records: list[dict]) -> None:
         project_id=GCP_PROJECT,
         dataset_id=BQ_DATASET,
         table_id=BQ_TABLE,
-        rows=rows_to_insert,
-        location=BQ_LOCATION,
+        rows=rows_to_insert
     )
     if errors:
         raise RuntimeError(f"Error inserting rows into BigQuery: {errors}")
