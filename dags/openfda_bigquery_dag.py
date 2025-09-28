@@ -7,6 +7,8 @@ from calendar import monthrange
 import requests
 import pandas as pd
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
+from airflow.operators.python import get_current_context
+
 
 # ====== CONFIG ======
 GCP_PROJECT = "mba-cdia-enap"
@@ -17,6 +19,9 @@ GCP_CONN_ID = "google_cloud_default"
 # ====================
 
 # Teste ano
+ctx = get_current_context()
+year = ctx["dag_run"].conf.get("year", 2025)  # default to 2025 if not provided
+
 def generate_query_url_year(year: int) -> str:
     """
     Build the openFDA API query URL filtering semaglutide events for the entire year.
