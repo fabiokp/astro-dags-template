@@ -17,10 +17,12 @@ GCP_CONN_ID = "google_cloud_default"
 # ====================
 
 
-def generate_query_url(year: int, month: int) -> str:
-    start_date = f"{year}{month:02d}01"
-    end_day = monthrange(year, month)[1]
-    end_date = f"{year}{month:02d}{end_day:02d}"
+def generate_query_url_year(year: int) -> str:
+    """
+    Build the openFDA API query URL filtering semaglutide events for the entire year.
+    """
+    start_date = f"{year}0101"
+    end_date = f"{year}1231"
     return (
         "https://api.fda.gov/drug/event.json"
         f"?search=patient.drug.openfda.generic_name:%22semaglutide%22"
