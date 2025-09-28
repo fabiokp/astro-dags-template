@@ -1,6 +1,5 @@
 # dags/bitcoin_etl_coingecko.py
 from __future__ import annotations
-
 from airflow.decorators import dag, task
 from airflow.operators.python import get_current_context
 from datetime import timedelta
@@ -8,12 +7,10 @@ import pendulum
 import requests
 import pandas as pd
 
-
 DEFAULT_ARGS = {
     "email_on_failure": True,
     "owner": "Alex Lopes,Open in Cloud IDE",
 }
-
 
 @task
 def fetch_bitcoin_history_from_coingecko():
@@ -42,9 +39,30 @@ def fetch_bitcoin_history_from_coingecko():
 
     # Observação: CoinGecko pode aplicar rate limit (HTTP 429).
     # O retry geral é tratado pelo Airflow (default_args['retries']).
-    r = requests.get(url, params=params, timeout=30)
-    r.raise_for_status()
-    payload = r.json()
+    # r = requests.get(url, params=params, timeout=30)
+    # r.raise_for_status()
+    # payload = r.json()
+    
+    MAX_ATTEMPTS = 5
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            r = requests.get(url, params=params, timeout=360)
+            if r.status_code == 429:
+                wait = 5 * (2 ** attempt)
+                print(f"[CoinGecko] 429 Too Many Requests - sleeping {wait}s before retry")
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            payload = r.json()
+            break
+        except requests.exceptions.HTTPError as err:
+            print(f"HTTPError: {err}")
+            wait = 5 * (2 ** attempt)
+            time.sleep(wait)
+    else:
+        # If all retries fail, log and raise exception
+        raise Exception(f"Failed to fetch from CoinGecko API after {MAX_ATTEMPTS} attempts.")
+    
 
     # payload contém listas de pares [timestamp_ms, valor]
     prices = payload.get("prices", [])
@@ -76,7 +94,7 @@ def fetch_bitcoin_history_from_coingecko():
     from airflow.providers.postgres.hooks.postgres import PostgresHook
     hook = PostgresHook(postgres_conn_id="postgres")
     engine = hook.get_sqlalchemy_engine()
-    df.to_sql("bitcoin_history", con=engine, if_exists="append", index=True)
+    df.to_sql("bitcoin_history_fabio", con=engine, if_exists="append", index=True)
 
 
 @dag(
@@ -84,6 +102,8 @@ def fetch_bitcoin_history_from_coingecko():
     schedule="0 0 * * *",  # diário à 00:00 UTC
     start_date=pendulum.datetime(2025, 9, 17, tz="UTC"),
     catchup=True,
+    max_active_runs=1,
+    concurrency=1,
     owner_links={
         "Alex Lopes": "mailto:alexlopespereira@gmail.com",
         "Open in Cloud IDE": "https://cloud.astronomer.io/cm3webulw15k701npm2uhu77t/cloud-ide/cm42rbvn10lqk01nlco70l0b8/cm44gkosq0tof01mxajutk86g",
