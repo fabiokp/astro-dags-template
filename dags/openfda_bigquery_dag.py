@@ -17,8 +17,6 @@ BQ_TABLE = "semaglutide_reactions"
 GCP_CONN_ID = "google_cloud_default"
 # ====================
 
-# Teste ano
-
 def generate_query_url(year: int, month: int) -> str:
     start_date = f"{year}{month:02d}01"
     end_day = monthrange(year, month)[1]
