@@ -82,7 +82,7 @@ def save_to_bigquery(df: pd.DataFrame):
         print("No data to write to BigQuery for this period.")
         return
 
-    bq_hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, location=BQ_LOCATION, use_legacy_sql=False)
+    bq_hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, use_legacy_sql=False)
     credentials = bq_hook.get_credentials()
     destination_table = f"{BQ_DATASET}.{BQ_TABLE}"
 
@@ -102,7 +102,6 @@ def save_to_bigquery(df: pd.DataFrame):
         if_exists="append",
         credentials=credentials,
         table_schema=table_schema,
-        location=BQ_LOCATION,
         progress_bar=False,
     )
 
