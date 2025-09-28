@@ -33,6 +33,7 @@ def format_fda_response(api_data):
     extracted_data = []
     for result in api_data.get("results", []):
         report_id = result.get("safetyreportid")
+        receivedate = result.get("receivedate")
         country = result.get("occurcountry")
         patient = result.get("patient", {})
         age = patient.get("patientonsetage")
@@ -47,6 +48,7 @@ def format_fda_response(api_data):
         columns=[
             "safetyreportid",
             "occurcountry",
+            "receivedate",        # Added here
             "patientonsetage",
             "patientsex",
             "reactionmeddrapt",
